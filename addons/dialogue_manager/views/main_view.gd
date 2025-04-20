@@ -358,6 +358,7 @@ func apply_theme() -> void:
 			background_color = editor_settings.get_setting("text_editor/theme/highlighting/background_color"),
 			current_line_color = editor_settings.get_setting("text_editor/theme/highlighting/current_line_color"),
 			error_line_color = editor_settings.get_setting("text_editor/theme/highlighting/mark_color"),
+			warn_line_color = Color(editor_settings.get_setting("text_editor/theme/highlighting/comment_markers/warning_color"), 0.1),
 
 			critical_color = editor_settings.get_setting("text_editor/theme/highlighting/comment_markers/critical_color"),
 			notice_color = editor_settings.get_setting("text_editor/theme/highlighting/comment_markers/notice_color"),
@@ -490,8 +491,8 @@ func compile() -> void:
 	if current_file_path == "": return
 
 	var result: DMCompilerResult = DMCompiler.compile_string(code_edit.text, current_file_path)
-	code_edit.errors = result.errors
-	errors_panel.errors = result.errors
+	code_edit.errors = result.errors + result.warnings
+	errors_panel.errors = result.errors + result.warnings
 	title_list.titles = code_edit.get_titles()
 
 
@@ -1155,4 +1156,3 @@ func _on_close_confirmation_dialog_custom_action(action: StringName) -> void:
 func _on_find_in_files_result_selected(path: String, cursor: Vector2, length: int) -> void:
 	open_file(path)
 	code_edit.select(cursor.y, cursor.x, cursor.y, cursor.x + length)
-	code_edit.set_line_as_center_visible(cursor.y)

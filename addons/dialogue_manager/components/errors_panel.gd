@@ -37,9 +37,6 @@ func _ready() -> void:
 
 ## Set up colors and icons
 func apply_theme() -> void:
-	error_button.add_theme_color_override("font_color", get_theme_color("error_color", "Editor"))
-	error_button.add_theme_color_override("font_hover_color", get_theme_color("error_color", "Editor"))
-	error_button.icon = get_theme_icon("StatusError", "EditorIcons")
 	previous_button.icon = get_theme_icon("ArrowLeft", "EditorIcons")
 	next_button.icon = get_theme_icon("ArrowRight", "EditorIcons")
 
@@ -59,7 +56,16 @@ func show_error() -> void:
 		show()
 		count_label.text = DialogueConstants.translate(&"n_of_n").format({ index = error_index + 1, total = errors.size() })
 		var error = errors[error_index]
-		error_button.text = DialogueConstants.translate(&"errors.line_and_message").format({ line = error.line_number, column = error.column_number, message = DialogueConstants.get_error_message(error.error) })
+		var is_warning = error.get("is_warning", false)
+
+		var args := { line = error.line_number, column = error.column_number, message = DialogueConstants.get_error_message(error.error) }
+		args.merge(error.get("args", {}))
+		error_button.text = DialogueConstants.translate(&"errors.line_and_message" if not is_warning else &"warnings.line_and_message").format(args)
+
+		error_button.icon = get_theme_icon("StatusError" if not is_warning else "StatusWarning", "EditorIcons")
+		error_button.add_theme_color_override("font_color", get_theme_color("error_color" if not is_warning else "warning_color", "Editor"))
+		error_button.add_theme_color_override("font_hover_color", get_theme_color("error_color" if not is_warning else "warning_color", "Editor"))
+
 		if error.has("external_error"):
 			error_button.text += " " + DialogueConstants.get_error_message(error.external_error)
 

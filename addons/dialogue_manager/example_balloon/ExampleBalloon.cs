@@ -1,3 +1,4 @@
+#pragma warning disable
 using Godot;
 using Godot.Collections;
 

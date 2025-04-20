@@ -20,6 +20,8 @@ var character_names: PackedStringArray = []
 ## Any compilation errors.
 var errors: Array[Dictionary] = []
 
+var warnings: Array[Dictionary] = []
+
 ## A map of all compiled lines.
 var lines: Dictionary = {}
 

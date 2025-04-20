@@ -13,7 +13,8 @@ static func compile_string(text: String, path: String) -> DMCompilerResult:
 	result.character_names = compilation.character_names
 	result.titles = compilation.titles
 	result.first_title = compilation.first_title
-	result.errors = compilation.errors
+	result.errors = compilation.errors.filter(func(err): return !err.get("is_warning", false))
+	result.warnings = compilation.errors.filter(func(err): return err.get("is_warning", false))
 	result.lines = compilation.data
 	result.raw_text = text
 

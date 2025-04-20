@@ -546,7 +546,7 @@ func parse_when_line(tree_line: DMTreeLine, line: DMCompiledLine, siblings: Arra
 func parse_mutation_line(tree_line: DMTreeLine, line: DMCompiledLine, siblings: Array[DMTreeLine], sibling_index: int, parent: DMCompiledLine) -> Error:
 	var mutation: Dictionary = extract_mutation(tree_line.text)
 	if mutation.has("error"):
-		return add_error(tree_line.line_number, mutation.index, mutation.error)
+		return add_error(tree_line.line_number, mutation.index, mutation.error, mutation.get("is_warning", false), mutation.get("args", {}))
 	else:
 		line.expression = mutation
 
@@ -872,7 +872,7 @@ func parse_character_and_dialogue(tree_line: DMTreeLine, line: DMCompiledLine, s
 
 
 ## Add a compilation error to the list. Returns the given error code.
-func add_error(line_number: int, column_number: int, error: int) -> Error:
+func add_error(line_number: int, column_number: int, error: int, is_warning: bool = false, args := {}) -> Error:
 	# See if the error was in an imported file
 	for item in _imported_line_map.values():
 		if line_number < item.to_line:
@@ -881,7 +881,9 @@ func add_error(line_number: int, column_number: int, error: int) -> Error:
 				column_number = 0,
 				error = DMConstants.ERR_ERRORS_IN_IMPORTED_FILE,
 				external_error = error,
-				external_line_number = line_number
+				external_line_number = line_number,
+				is_warning = false,
+				args = args
 			})
 			return error
 
@@ -889,7 +891,9 @@ func add_error(line_number: int, column_number: int, error: int) -> Error:
 	errors.append({
 		line_number = line_number - _imported_line_count,
 		column_number = column_number,
-		error = error
+		error = error,
+		is_warning = is_warning,
+		args = args,
 	})
 
 	return error
@@ -911,6 +915,11 @@ func get_autoload_names() -> PackedStringArray:
 
 	return autoloads
 
+func get_autoload_script(name: String) -> Script:
+	var autoloads = get_autoload_names()
+	if name in autoloads:
+		return load(ProjectSettings.get("autoload/" + name).substr(1))
+	return null
 
 ## Check if a line is importing another file.
 func is_import_line(text: String) -> bool:
@@ -1071,6 +1080,52 @@ func extract_mutation(text: String) -> Dictionary:
 				error = expression[0].value
 			}
 		else:
+			if Engine.is_editor_hint():
+				if len(expression) > 0 and expression[0].type == DMConstants.TOKEN_FUNCTION and not [&"wait", "&debug"].has(expression[0].function):
+					var args = expression[0].value
+					if len(args) == 1 && args[0][0].type == DMConstants.TOKEN_PARENS_CLOSE:
+						args = []
+					for autoload_name in using_states:
+						var err = _validate_autoload_function(autoload_name, expression[0].function, len(args))
+						if err > 0:
+							return {
+								index = expression[0].i,
+								error = err,
+								is_warning = true,
+								args = {
+									base = autoload_name,
+									method = expression[0].function,
+									arg_count = len(args)
+								}
+							}
+				elif len(expression) > 2 and expression[0].type == DMConstants.TOKEN_VARIABLE and expression[2].type == DMConstants.TOKEN_FUNCTION:
+					if not get_autoload_names().has(expression[0].value):
+						return {
+							index = expression[0].i,
+							error = DMConstants.ERR_UNKNOWN_AUTOLOAD,
+							is_warning = true,
+							args = {
+								base = expression[0].value
+							}
+						}
+
+					var args = expression[2].value
+					if len(args) == 1 && args[0][0].type == DMConstants.TOKEN_PARENS_CLOSE:
+						args = []
+					var err = _validate_autoload_function(expression[0].value, expression[2].function, len(args))
+					if err > 0:
+						return {
+							index = expression[2].i,
+							error = err,
+							is_warning = true,
+							args = {
+								base = expression[0].value,
+								method = expression[2].function,
+								arg_count = len(args),
+							}
+						}
+
+			
 			return {
 				expression = expression,
 				is_blocking = not "!" in found.strings[found.names.keyword]
@@ -1106,6 +1161,28 @@ func parse_children(tree_line: DMTreeLine, line: DMCompiledLine) -> Array[DMComp
 					lines.get(sibling.id).next_id = last_child.next_id
 
 	return children
+
+
+#endregion
+
+#region Validation
+
+func _validate_autoload_function(autoload: String, function: String, args_count: int) -> int:
+	var autoload_script = get_autoload_script(autoload)
+	if not autoload_script:
+		return 0 # validated before
+	
+	for method in autoload_script.get_script_method_list():
+		if method.name == function:
+			if len(method.args) != args_count:
+				return DMConstants.ERR_METHOD_INCORRECT_ARGUMENT_COUNT
+			return 0
+
+	# If not found, it could be a C# async method
+	if autoload_script.resource_path.ends_with(".cs"):
+		return DialogueManager._get_dotnet_dialogue_manager().ThingScriptHasMethod(autoload_script, function, args_count)
+
+	return DMConstants.ERR_UNKNOWN_METHOD
 
 
 #endregion

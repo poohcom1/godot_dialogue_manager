@@ -188,6 +188,9 @@ msgstr ""
 msgid "errors.line_and_message"
 msgstr ""
 
+msgid "warnings.line_and_message"
+msgstr ""
+
 msgid "errors_in_script"
 msgstr ""
 
@@ -321,6 +324,15 @@ msgid "errors.err_nested_dialogue_invalid_jump"
 msgstr ""
 
 msgid "errors.unknown"
+msgstr ""
+
+msgid "errors.method_not_found"
+msgstr ""
+
+msgid "errors.method_incorrect_arg_count"
+msgstr ""
+
+msgid "errors.base_not_found"
 msgstr ""
 
 msgid "update.available"

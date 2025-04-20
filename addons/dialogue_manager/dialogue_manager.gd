@@ -1,3 +1,4 @@
+@tool
 extends Node
 
 const DialogueResource = preload("./dialogue_resource.gd")
@@ -67,6 +68,9 @@ var _dotnet_dialogue_manager: RefCounted
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	# Cache the known Node2D properties
 	_node_properties = ["Script Variables"]
 	var temp_node: Node2D = Node2D.new()

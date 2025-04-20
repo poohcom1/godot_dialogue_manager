@@ -1,3 +1,4 @@
+#pragma warning disable
 using Godot;
 using Godot.Collections;
 using System;
@@ -17,6 +18,7 @@ namespace DialogueManagerRuntime
         PO
     }
 
+    [Tool]
     public partial class DialogueManager : RefCounted
     {
         public delegate void DialogueStartedEventHandler(Resource dialogueResource);
@@ -242,6 +244,35 @@ namespace DialogueManagerRuntime
             }
 
             return false;
+        }
+
+        public int ThingScriptHasMethod(Script script, string method, int argsCount) {
+            var className = script.ResourcePath.GetFile().GetBaseName();
+            var assembly = Assembly.GetExecutingAssembly();
+
+            if (assembly.GetTypes().Count(type => type.Name == className) > 1) {
+                return 0; // Multiple classes with the same name, let's not assume anything
+            }
+
+            var type = assembly.GetTypes().FirstOrDefault(type => type.Name == className);
+            if (type == null) {
+                return 141;
+            }
+
+            var methodInfos = type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            var methodFound = false;
+            foreach (var methodInfo in methodInfos)
+            {
+                if (methodInfo.Name == method)
+                {
+                    methodFound = true;
+                    if (argsCount == methodInfo.GetParameters().Length) {
+                        return 0;
+                    } 
+                }
+            }
+
+            return methodFound ? 142 : 141;
         }
 
 

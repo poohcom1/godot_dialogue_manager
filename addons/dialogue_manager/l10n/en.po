@@ -198,6 +198,9 @@ msgstr "Key \"{key}\" not found."
 msgid "errors.line_and_message"
 msgstr "Error at {line}, {column}: {message}"
 
+msgid "warnings.line_and_message"
+msgstr "Warning at {line}, {column}: {message}"
+
 msgid "errors_in_script"
 msgstr "You have errors in your script. Fix them and then try again."
 
@@ -332,6 +335,15 @@ msgstr "Only the last line of nested dialogue is allowed to include a jump."
 
 msgid "errors.unknown"
 msgstr "Unknown syntax."
+
+msgid "errors.method_not_found"
+msgstr "Function \"{method}\" not found in base \"{base}\"."
+
+msgid "errors.method_incorrect_arg_count"
+msgstr "Function \"{method}\" has incorrect argument count: {arg_count}."
+
+msgid "errors.base_not_found"
+msgstr "Autoload \"{base}\" not found."
 
 msgid "update.available"
 msgstr "v{version} available"
